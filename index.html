@@ -14,6 +14,7 @@
   <script>
     function observe (obj, vm) {
       Object.keys(obj).forEach(function (key) {
+          //对obj中所有的key添加观察者
         defineReactive(vm, key, obj[key]);
       })
     }
@@ -23,12 +24,13 @@
 
       Object.defineProperty(obj, key, {
         get: function () {
-          // 添加订阅者 watcher 到主题对象 Dep
+
+          // 添加订阅者 watcher 到主题对象 Dep，第一次get的时候还没有指定watcher
           if (Dep.target) dep.addSub(Dep.target);
           return val
         },
         set: function (newVal) {
-          if (newVal === val) return
+          if (newVal === val) return;
           val = newVal;
           // 作为发布者发出通知
           dep.notify();
@@ -55,18 +57,25 @@
     function compile (node, vm) {
       var reg = /\{\{(.*)\}\}/;
       // 节点类型为元素
+
       if (node.nodeType === 1) {
         var attr = node.attributes;
+          console.log(attr);
         // 解析属性
         for (var i = 0; i < attr.length; i++) {
+
           if (attr[i].nodeName == 'v-model') {
             var name = attr[i].nodeValue; // 获取 v-model 绑定的属性名
+
             node.addEventListener('input', function (e) {
               // 给相应的 data 属性赋值，进而触发该属性的 set 方法
+              // 触发input也可以触发set属性
+                console.log('hello,数据被更新了');
               vm[name] = e.target.value;
             });
-            node.value = vm[name]; // 将 data 的值赋给该 node
+
             node.removeAttribute('v-model');
+
           }
         };
 
@@ -96,10 +105,11 @@
     Watcher.prototype = {
       update: function () {
         this.get();
-        if (this.nodeType == 'text') {
+        if (this.nodeType === 'text') {
           this.node.nodeValue = this.value;
         }
-        if (this.nodeType == 'input') {
+        if (this.nodeType === 'input') {
+            //触发属性的get
           this.node.value = this.value;
         }
       },
@@ -107,7 +117,7 @@
       get: function () {
         this.value = this.vm[this.name]; // 触发相应属性的 get
       }
-    }
+    };
 
     function Dep () {
       this.subs = []
@@ -123,7 +133,7 @@
           sub.update();
         });
       }
-    }
+    };
 
     function Vue (options) {
       this.data = options.data;
